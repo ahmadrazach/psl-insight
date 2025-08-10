@@ -3,8 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PSL Season 9 – Search & Retrieval Metrics</title>
-    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <title>PSL Insight — Simple Search & Metrics</title>
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
     <style>
       :root {
@@ -15,35 +14,29 @@
         --brand: #0ea5e9;
       }
       body {
-        font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial,
-          sans-serif;
+        font-family: system-ui, Segoe UI, Inter, Arial, sans-serif;
         background: var(--bg);
         margin: 0;
       }
-      header {
-        padding: 24px 20px 8px;
+      .wrap {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 24px 16px 40px;
       }
       h1 {
-        margin: 0 0 6px 0;
-      }
-      .wrap {
-        max-width: 1100px;
-        margin: 0 auto;
-        padding: 0 16px 40px;
+        margin: 0 0 8px 0;
       }
       .card {
         background: var(--card);
         border: 1px solid var(--line);
         border-radius: 12px;
+        padding: 14px 16px;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
       }
       .row {
         display: flex;
         flex-wrap: wrap;
-        gap: 12px;
-      }
-      .section {
-        padding: 16px;
+        gap: 10px;
       }
       label {
         font-size: 0.9rem;
@@ -58,19 +51,14 @@
         border-radius: 10px;
         background: #fff;
       }
+      input[type='text'] {
+        width: 420px;
+      }
       button {
         background: var(--brand);
         color: #fff;
         border: none;
         cursor: pointer;
-      }
-      button:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-      }
-      .hint {
-        color: var(--muted);
-        font-size: 0.9rem;
       }
       table {
         width: 100%;
@@ -87,165 +75,123 @@
       th {
         background: #f9fafb;
       }
-      .pill {
-        display: inline-block;
-        padding: 2px 8px;
-        border-radius: 999px;
-        border: 1px solid var(--line);
-        font-size: 12px;
-        color: #111;
-        background: #fff;
-      }
-      .good {
-        background: #e7ffe7;
-      }
-      .metrics {
-        display: flex;
-        gap: 16px;
-        flex-wrap: wrap;
+      .hint {
+        color: var(--muted);
+        font-size: 0.92rem;
       }
       .metric {
+        display: inline-block;
         background: #f8fafc;
         border: 1px solid var(--line);
         border-radius: 10px;
-        padding: 10px 12px;
+        padding: 8px 10px;
+        margin-right: 8px;
+        margin-bottom: 8px;
       }
-      .grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
-      }
-      @media (max-width: 900px) {
-        .grid {
-          grid-template-columns: 1fr;
-        }
+      .good {
+        background: #e7ffe7;
       }
       details {
         background: #f8fafc;
         border: 1px solid var(--line);
         border-radius: 10px;
-        padding: 10px 12px;
-      }
-      .footer {
-        color: var(--muted);
-        font-size: 0.85rem;
-        padding: 16px;
+        padding: 8px 10px;
       }
     </style>
   </head>
   <body>
-    <header class="wrap">
-      <h1>PSL Season 9 – Search & Retrieval Metrics</h1>
-      <div class="hint">
-        Free‑text search + filters + precision/recall on ball‑by‑ball data
-        (Feb–Mar 2024).
-      </div>
-    </header>
-
     <main class="wrap">
+      <h1>PSL Insight</h1>
+      <div class="hint">
+        Search PSL Season 9 (Feb–Mar 2024) ball‑by‑ball data. Type anything and
+        choose what you want to find.
+      </div>
+
       <!-- Controls -->
-      <div class="card section">
+      <div class="card" style="margin-top: 12px">
         <div class="row">
           <div>
-            <label>Query</label><br />
+            <label>Search</label><br />
             <input
               id="q"
               type="text"
-              placeholder="e.g., 'Shaheen Afridi wickets at Gaddafi Stadium' "
-              size="46"
+              placeholder="e.g., Shaheen Afridi wickets at Gaddafi Stadium"
             />
           </div>
           <div>
-            <label>Season</label><br />
-            <select id="season">
-              <option value="">All</option>
-            </select>
-          </div>
-          <div>
-            <label>Team (batting/bowling)</label><br />
-            <select id="team">
-              <option value="">All</option>
-            </select>
-          </div>
-          <div>
-            <label>Venue</label><br />
-            <select id="venue">
-              <option value="">All</option>
+            <label>What are you looking for?</label><br />
+            <select id="label">
+              <option value="any">Anything</option>
+              <option value="wicket">Wickets</option>
+              <option value="batting">Runs off the bat</option>
+              <option value="extras">
+                Extras (wides/noballs/byes/legbyes/penalty)
+              </option>
             </select>
           </div>
           <div style="align-self: end">
             <button id="btnSearch">Search</button>
           </div>
         </div>
-        <div class="row" style="margin-top: 10px">
-          <div>
-            <label>Retrieval label (for metrics)</label><br />
-            <select id="label">
-              <option value="batting">batting (runs_off_bat ≥ 1)</option>
-              <option value="wicket">wicket (wicket_type present)</option>
-              <option value="extras">
-                extras (wides/noballs/byes/legbyes/penalty)
-              </option>
-              <option value="other">other</option>
-            </select>
-          </div>
-          <div>
-            <label>CSV Source</label><br />
-            <span class="pill" id="csvSource"
-              >Attempting to fetch PSL_Season_09_dataset.csv…</span
-            >
-          </div>
-          <div>
-            <label>Or upload CSV</label><br />
-            <input id="file" type="file" accept=".csv" />
-          </div>
+        <div class="hint" style="margin-top: 6px">
+          We auto‑load <code>psl.csv</code> from this folder. No uploads or
+          settings needed.
         </div>
       </div>
 
-      <!-- Metrics & Stats -->
-      <div class="grid" style="margin-top: 14px">
-        <div class="card section">
-          <h3 style="margin-top: 0">Precision & Recall</h3>
-          <div class="metrics" id="metricsBox">
-            <div class="metric">Precision: <strong id="prec">–</strong></div>
-            <div class="metric">Recall: <strong id="rec">–</strong></div>
-            <div class="metric">Top‑K: <strong id="topk">–</strong></div>
-            <div class="metric">
-              Relevant in set: <strong id="relevant">–</strong>
-            </div>
-          </div>
-          <details style="margin-top: 10px">
-            <summary>How scores are computed</summary>
-            <div class="hint">
-              Text for each ball is vectorized with <strong>TF‑IDF</strong>. We
-              compute <strong>cosine similarity</strong> between your query
-              vector and each ball vector. We rank by cosine and show Top‑K. The
-              “retrieval label” is auto‑derived per row:<br />
-              <code>batting</code> if runs_off_bat ≥ 1; <code>wicket</code> if
-              wicket_type present; <code>extras</code> if
-              wides/noballs/byes/legbyes/penalty &gt; 0; else
-              <code>other</code>.<br />
-              <strong>Precision</strong> = TP / (TP + FP).
-              <strong>Recall</strong> = TP / (TP + FN).
-            </div>
-          </details>
+      <!-- Metrics -->
+      <div class="card" style="margin-top: 12px">
+        <h3 style="margin: 6px 0 8px">Precision & Recall (plain English)</h3>
+        <div class="hint" style="margin-bottom: 8px">
+          Out of the top results we show, <b>Precision</b> tells you how many
+          actually match what you asked for. <b>Recall</b> tells you how many of
+          all possible matching rows we managed to catch in those top results.
         </div>
+        <div>
+          <span class="metric">Precision: <strong id="prec">–</strong></span>
+          <span class="metric">Recall: <strong id="rec">–</strong></span>
+          <span class="metric">Top‑K shown: <strong id="topk">–</strong></span>
+          <span class="metric"
+            >All rows matching your choice:
+            <strong id="relevant">–</strong></span
+          >
+        </div>
+        <details style="margin-top: 8px">
+          <summary>How the score works</summary>
+          <div class="hint">
+            We turn each ball’s info into text and use <b>TF‑IDF</b> to make
+            vectors. Your query becomes a vector too. We compare with
+            <b>cosine similarity</b> and rank the best matches (Top‑K = 10).
+            Your “What are you looking for?” choice marks each row as:
+            <ul>
+              <li><b>Wickets</b>: any wicket_type present</li>
+              <li><b>Runs off the bat</b>: runs_off_bat ≥ 1</li>
+              <li><b>Extras</b>: wides/noballs/byes/legbyes/penalty ≥ 1</li>
+              <li><b>Anything</b>: no label filter (metrics disabled)</li>
+            </ul>
+            Precision = TP / (TP + FP). &nbsp; Recall = TP / (TP + FN).
+          </div>
+        </details>
+      </div>
 
-        <div class="card section">
-          <h3 style="margin-top: 0">Quick Stats (current filter/search set)</h3>
-          <div id="stats" class="hint">–</div>
+      <!-- Quick stats -->
+      <div class="card" style="margin-top: 12px">
+        <h3 style="margin: 6px 0 8px">In these results (Top 10)</h3>
+        <div id="stats" class="hint">
+          Type a query to see totals for runs, wickets, 4s/6s, and top players.
         </div>
       </div>
 
       <!-- Results -->
-      <div class="card section" style="margin-top: 14px">
-        <h3 style="margin-top: 0">Results</h3>
+      <div class="card" style="margin-top: 12px">
+        <h3 style="margin: 6px 0 8px">Results</h3>
         <table>
           <thead>
             <tr>
               <th>Match / Over</th>
-              <th>Teams & Venue</th>
-              <th>Actors</th>
+              <th>Teams</th>
+              <th>Venue</th>
+              <th>Players</th>
               <th>Event</th>
               <th>Score</th>
               <th>Match</th>
@@ -253,23 +199,21 @@
           </thead>
           <tbody id="tbody">
             <tr>
-              <td colspan="6" class="hint">
-                Load a CSV or wait for <code>PSL_Season_09_dataset.csv</code> to
-                be fetched.
+              <td colspan="7" class="hint">
+                Waiting for <code>psl.csv</code>…
               </td>
             </tr>
           </tbody>
         </table>
-        <div class="footer">
-          Match quality: 🟢✨ ≥0.80, 🟢 ≥0.50, 🟡 ≥0.20, 🔴 &lt;0.20
+        <div class="hint" style="margin-top: 6px">
+          Match quality legend: 🟢✨ ≥0.80, 🟢 ≥0.50, 🟡 ≥0.20, 🔴 &lt;0.20
         </div>
       </div>
     </main>
 
     <script>
-      /*** ---------- Utilities ---------- ***/
+      /* ===== Helpers ===== */
       const $ = (id) => document.getElementById(id)
-
       function tokenize(s) {
         return s
           .toLowerCase()
@@ -278,54 +222,50 @@
           .filter(Boolean)
       }
       function cosine(a, b) {
-        let dot = 0,
+        let d = 0,
           na = 0,
           nb = 0
         for (let i = 0; i < a.length; i++) {
-          dot += a[i] * b[i]
+          d += a[i] * b[i]
           na += a[i] * a[i]
           nb += b[i] * b[i]
         }
-        return dot / (Math.sqrt(na) * Math.sqrt(nb) || 1)
+        return d / (Math.sqrt(na) * Math.sqrt(nb) || 1)
       }
-      function matchEmoji(score) {
+      function emoji(score) {
         if (score >= 0.8) return '🟢✨ Perfect'
         if (score >= 0.5) return '🟢 High'
         if (score >= 0.2) return '🟡 Medium'
         return '🔴 Low'
       }
 
-      /*** ---------- Data & Index ---------- ***/
-      let rows = [] // raw CSV rows (objects)
-      let docs = [] // derived text docs with vectors
-      let vocab = new Map() // token -> index
-      let idf = {} // token -> idf
-      let dim = 0
+      /* ===== Data + Index ===== */
+      let rows = [],
+        docs = [],
+        vocab = new Map(),
+        idf = {},
+        dim = 0
 
-      function rowLabel(r) {
-        const toNum = (x) => +x || 0
-        const hasWicket =
-          (r.wicket_type || '').trim().length > 0 ||
-          (r.player_dismissed || '').trim().length > 0 ||
-          (r.other_wicket_type || '').trim().length > 0 ||
-          (r.other_player_dismissed || '').trim().length > 0
-        const runs = toNum(r.runs_off_bat)
-        const extras =
-          toNum(r.wides) +
-          toNum(r.noballs) +
-          toNum(r.byes) +
-          toNum(r.legbyes) +
-          toNum(r.penalty)
-        if (hasWicket) return 'wicket'
-        if (runs >= 1) return 'batting'
-        if (extras > 0) return 'extras'
+      function labelRow(r) {
+        const n = (x) => +x || 0
+        const wicket =
+          (r.wicket_type || '').trim() ||
+          (r.player_dismissed || '').trim() ||
+          (r.other_wicket_type || '').trim() ||
+          (r.other_player_dismissed || '').trim()
+        if (wicket) return 'wicket'
+        if (n(r.runs_off_bat) >= 1) return 'batting'
+        if (
+          n(r.wides) + n(r.noballs) + n(r.byes) + n(r.legbyes) + n(r.penalty) >
+          0
+        )
+          return 'extras'
         return 'other'
       }
-
       function rowText(r) {
-        // Rich text field to index (tune as needed)
-        const bits = [
-          r.season,
+        const ex =
+          +r.wides + +r.noballs + +r.byes + +r.legbyes + +r.penalty || 0
+        return [
           r.start_date,
           r.venue,
           r.batting_team,
@@ -337,21 +277,22 @@
           r.non_striker,
           'bowler',
           r.bowler,
-          'ball',
+          'over',
           r.ball,
           'runs',
           r.runs_off_bat,
           'extras',
-          +r.wides + +r.noballs + +r.byes + +r.legbyes + +r.penalty || 0,
+          ex,
           'wicket',
           r.wicket_type,
           r.player_dismissed,
         ]
-        return bits.filter(Boolean).join(' ')
+          .filter(Boolean)
+          .join(' ')
       }
-
-      function buildIndex() {
-        // DF
+      function rebuildDocs() {
+        docs = rows.map((r, i) => ({ i, label: labelRow(r), text: rowText(r) }))
+        // build vocab/idf
         const df = {}
         docs.forEach((d) => {
           const seen = new Set()
@@ -362,7 +303,8 @@
             }
           })
         })
-        // IDF + vocab
+        vocab.clear()
+        idf = {}
         let idx = 0
         const N = docs.length
         for (const t in df) {
@@ -370,299 +312,194 @@
           vocab.set(t, idx++)
         }
         dim = vocab.size
-        // TF-IDF per doc
+        // doc vectors
         docs.forEach((d) => {
-          const vec = new Float32Array(dim)
-          const tf = {}
+          const vec = new Float32Array(dim),
+            tf = {}
           tokenize(d.text).forEach((t) => (tf[t] = (tf[t] || 0) + 1))
           for (const t in tf) {
             const j = vocab.get(t)
-            if (j === undefined) continue
-            vec[j] = tf[t] * (idf[t] || 0)
+            if (j !== undefined) vec[j] = tf[t] * (idf[t] || 0)
           }
           d.vec = vec
         })
       }
 
-      function rebuildDocs() {
-        docs = rows.map((r, i) => ({
-          i,
-          label: rowLabel(r),
-          text: rowText(r),
-          season: r.season || '',
-          venue: r.venue || '',
-          batting_team: r.batting_team || '',
-          bowling_team: r.bowling_team || '',
-        }))
-        vocab.clear()
-        idf = {}
-        dim = 0
-        buildIndex()
-      }
-
-      /*** ---------- CSV Load ---------- ***/
-      function setFilters() {
-        const seasons = [
-          ...new Set(rows.map((r) => r.season).filter(Boolean)),
-        ].sort()
-        const venues = [
-          ...new Set(rows.map((r) => r.venue).filter(Boolean)),
-        ].sort()
-        const teams = [
-          ...new Set(
-            rows
-              .flatMap((r) => [r.batting_team, r.bowling_team])
-              .filter(Boolean)
-          ),
-        ].sort()
-        $('season').innerHTML =
-          `<option value="">All</option>` +
-          seasons.map((s) => `<option>${s}</option>`).join('')
-        $('venue').innerHTML =
-          `<option value="">All</option>` +
-          venues.map((s) => `<option>${s}</option>`).join('')
-        $('team').innerHTML =
-          `<option value="">All</option>` +
-          teams.map((s) => `<option>${s}</option>`).join('')
-      }
-
-      function parseCSVText(text) {
-        const parsed = Papa.parse(text, {
+      /* ===== CSV ===== */
+      function parseCSV(text) {
+        const data = Papa.parse(text, {
           header: true,
           skipEmptyLines: true,
         }).data
-        // normalize numeric fields
-        const toNum = (x) =>
-          x === undefined || x === null || x === '' ? 0 : +x
-        rows = parsed.map((r) => ({
+        const num = (x) => (x === '' || x == null ? 0 : +x)
+        rows = data.map((r) => ({
           match_id: r.match_id,
           season: r.season,
           start_date: r.start_date,
           venue: r.venue,
           innings: r.innings,
-          ball: r.ball, // string like "1.5"
+          ball: r.ball,
           batting_team: r.batting_team,
           bowling_team: r.bowling_team,
           striker: r.striker,
           non_striker: r.non_striker,
           bowler: r.bowler,
-          runs_off_bat: toNum(r.runs_off_bat),
-          wides: toNum(r.wides),
-          noballs: toNum(r.noballs),
-          byes: toNum(r.byes),
-          legbyes: toNum(r.legbyes),
-          penalty: toNum(r.penalty),
+          runs_off_bat: num(r.runs_off_bat),
+          wides: num(r.wides),
+          noballs: num(r.noballs),
+          byes: num(r.byes),
+          legbyes: num(r.legbyes),
+          penalty: num(r.penalty),
           wicket_type: r.wicket_type || '',
           player_dismissed: r.player_dismissed || '',
           other_wicket_type: r.other_wicket_type || '',
           other_player_dismissed: r.other_player_dismissed || '',
         }))
-        setFilters()
         rebuildDocs()
         $(
           'tbody'
-        ).innerHTML = `<tr><td colspan="6" class="hint">CSV loaded. Type a query and click Search.</td></tr>`
+        ).innerHTML = `<tr><td colspan="7" class="hint">CSV loaded. Type a query and press Enter.</td></tr>`
       }
-
-      async function tryFetchDefault() {
-        $('csvSource').textContent = 'Fetching PSL_Season_09_dataset.csv…'
+      ;(async function () {
         try {
-          const res = await fetch('PSL_Season_09_dataset.csv')
+          const res = await fetch('psl.csv')
           if (!res.ok) throw new Error(res.statusText)
-          const text = await res.text()
-          parseCSVText(text)
-          $('csvSource').textContent = 'Loaded: PSL_Season_09_dataset.csv'
+          parseCSV(await res.text())
         } catch (e) {
-          $('csvSource').textContent =
-            'No PSL_Season_09_dataset.csv found. Use Upload.'
+          $(
+            'tbody'
+          ).innerHTML = `<tr><td colspan="7" class="hint">Place <code>psl.csv</code> beside this file.</td></tr>`
         }
-      }
+      })()
 
-      $('file').addEventListener('change', (e) => {
-        const f = e.target.files[0]
-        if (!f) return
-        const reader = new FileReader()
-        reader.onload = (ev) => {
-          parseCSVText(ev.target.result)
-          $('csvSource').textContent = `Loaded: ${f.name}`
-        }
-        reader.readAsText(f)
-      })
-      tryFetchDefault()
-
-      /*** ---------- Search + Metrics + Stats ---------- ***/
-      function applyFilters(indices) {
-        const s = $('season').value,
-          t = $('team').value,
-          v = $('venue').value
-        return indices.filter((i) => {
-          const d = docs[i]
-          const teamMatch = !t || d.batting_team === t || d.bowling_team === t
-          const seasonMatch = !s || d.season === s
-          const venueMatch = !v || d.venue === v
-          return teamMatch && seasonMatch && venueMatch
-        })
-      }
-
-      function quickStats(indices) {
-        const toNum = (x) => +x || 0
-        const subset = indices.map((i) => rows[docs[i].i])
-        const totalBalls = subset.length
+      /* ===== Stats ===== */
+      function statsFrom(indices) {
+        const n = (x) => +x || 0
         let runs = 0,
-          wickets = 0,
+          wkts = 0,
           fours = 0,
-          sixes = 0
-        const batterRuns = new Map()
-        const bowlerWkts = new Map()
-        subset.forEach((r) => {
-          const rb = toNum(r.runs_off_bat)
+          sixes = 0,
+          balls = indices.length
+        const bats = new Map(),
+          bowls = new Map()
+        indices.forEach((i) => {
+          const r = rows[docs[i].i]
           const ex =
-            toNum(r.wides) +
-            toNum(r.noballs) +
-            toNum(r.byes) +
-            toNum(r.legbyes) +
-            toNum(r.penalty)
-          runs += rb + ex
-          if (r.wicket_type && r.wicket_type.trim().length > 0) {
-            wickets++
-            bowlerWkts.set(r.bowler, (bowlerWkts.get(r.bowler) || 0) + 1)
+            n(r.wides) + n(r.noballs) + n(r.byes) + n(r.legbyes) + n(r.penalty)
+          runs += n(r.runs_off_bat) + ex
+          if (n(r.runs_off_bat) === 4) fours++
+          if (n(r.runs_off_bat) === 6) sixes++
+          if ((r.wicket_type || '').trim()) {
+            wkts++
+            bowls.set(r.bowler, (bowls.get(r.bowler) || 0) + 1)
           }
-          if (rb === 4) fours++
-          if (rb === 6) sixes++
-          batterRuns.set(r.striker, (batterRuns.get(r.striker) || 0) + rb)
+          bats.set(r.striker, (bats.get(r.striker) || 0) + n(r.runs_off_bat))
         })
-        const topBatters = [...batterRuns.entries()]
+        const topBat = [...bats.entries()]
           .sort((a, b) => b[1] - a[1])
-          .slice(0, 5)
-        const topBowlers = [...bowlerWkts.entries()]
+          .slice(0, 3)
+        const topBowl = [...bowls.entries()]
           .sort((a, b) => b[1] - a[1])
-          .slice(0, 5)
-        $('stats').innerHTML = `<div class="metrics">
-       <div class="metric">Balls: <strong>${totalBalls}</strong></div>
-       <div class="metric">Runs: <strong>${runs}</strong></div>
-       <div class="metric">Wkts: <strong>${wickets}</strong></div>
-       <div class="metric">4s: <strong>${fours}</strong></div>
-       <div class="metric">6s: <strong>${sixes}</strong></div>
-     </div>
-     <div class="grid" style="margin-top:8px">
-       <div>
-         <strong>Top Batters (runs_off_bat)</strong><br/>
-         <ol>${
-           topBatters.map(([p, v]) => `<li>${p || '—'} — ${v}</li>`).join('') ||
-           '—'
-         }</ol>
-       </div>
-       <div>
-         <strong>Top Bowlers (wickets)</strong><br/>
-         <ol>${
-           topBowlers.map(([p, v]) => `<li>${p || '—'} — ${v}</li>`).join('') ||
-           '—'
-         }</ol>
-       </div>
-     </div>`
+          .slice(0, 3)
+        $('stats').innerHTML = `
+    Balls: <b>${balls}</b> &nbsp; Runs (incl extras): <b>${runs}</b> &nbsp; Wickets: <b>${wkts}</b> &nbsp; 4s: <b>${fours}</b> &nbsp; 6s: <b>${sixes}</b>
+    <div style="margin-top:6px">
+      <b>Top batters</b>: ${
+        topBat.map(([p, v]) => `${p || '—'} ${v}`).join(', ') || '—'
+      }<br/>
+      <b>Top bowlers</b>: ${
+        topBowl.map(([p, v]) => `${p || '—'} ${v}`).join(', ') || '—'
+      }
+    </div>`
       }
 
+      /* ===== Search & Metrics ===== */
       function search() {
         if (docs.length === 0) {
-          alert('Load a CSV first.')
+          alert('CSV not loaded yet.')
           return
         }
-        const q = $('q').value.trim()
-        if (!q) {
+        const query = $('q').value.trim()
+        if (!query) {
           alert('Enter a query')
           return
         }
 
-        // Build query vector
+        // query vector
         const qVec = new Float32Array(dim)
-        tokenize(q).forEach((t) => {
+        tokenize(query).forEach((t) => {
           const j = vocab.get(t)
-          if (j !== undefined) {
-            qVec[j] = idf[t] || 0
-          }
+          if (j !== undefined) qVec[j] = idf[t] || 0
         })
 
-        // Rank all
-        const allIdx = docs.map((_, i) => i)
-        const filteredIdx = applyFilters(allIdx)
-
-        // compute scores only for filtered
-        const ranked = filteredIdx
-          .map((i) => {
-            const s = cosine(qVec, docs[i].vec)
-            return { i, s }
-          })
+        // score all docs
+        const ranked = docs
+          .map((d, i) => ({ i, s: cosine(qVec, d.vec) }))
           .sort((a, b) => b.s - a.s)
-
         const topK = 10
         const top = ranked.slice(0, topK)
 
-        // Metrics for chosen label on the FILTERED set
-        const label = $('label').value
-        const relevantSet = filteredIdx.filter((i) => docs[i].label === label)
-        const truePos = top.filter((t) => docs[t.i].label === label).length
-        const fp = top.length - truePos
-        const fn = relevantSet.length - truePos
-        const precision = truePos / (truePos + fp || 1)
-        const recall = truePos / (truePos + fn || 1)
-
-        $('prec').textContent = precision.toFixed(2)
-        $('rec').textContent = recall.toFixed(2)
-        $('topk').textContent = `${top.length}`
-        $('relevant').textContent = `${relevantSet.length}`
-
-        // Stats for the current TOP set (or the whole filtered set — choose one)
-        quickStats(top.map((t) => t.i))
-
-        // Render rows
-        if (top.length === 0) {
-          $(
-            'tbody'
-          ).innerHTML = `<tr><td colspan="6" class="hint">No matches. Try different query/filters.</td></tr>`
-          return
+        // metrics (skip if "Anything")
+        const want = $('label').value
+        if (want === 'any') {
+          $('prec').textContent = '–'
+          $('rec').textContent = '–'
+          $('topk').textContent = `${top.length}`
+          $('relevant').textContent = '–'
+        } else {
+          const relevantAll = docs
+            .map((d, i) => i)
+            .filter((i) => docs[i].label === want)
+          const tp = top.filter((t) => docs[t.i].label === want).length
+          const fp = top.length - tp
+          const fn = relevantAll.length - tp
+          const precision = tp / (tp + fp || 1)
+          const recall = tp / (tp + fn || 1)
+          $('prec').textContent = precision.toFixed(2)
+          $('rec').textContent = recall.toFixed(2)
+          $('topk').textContent = `${top.length}`
+          $('relevant').textContent = `${relevantAll.length}`
         }
+
+        // stats from top set
+        statsFrom(top.map((t) => t.i))
+
+        // render
         $('tbody').innerHTML = top
           .map(({ i, s }) => {
             const r = rows[docs[i].i]
-            const event = []
-            if (+r.runs_off_bat > 0) event.push(`Runs: ${r.runs_off_bat}`)
-            const ex = +r.wides + +r.noballs + +r.byes + +r.legbyes + +r.penalty
-            if (ex > 0) event.push(`Extras: ${ex}`)
-            if ((r.wicket_type || '').trim().length > 0)
-              event.push(
-                `Wicket: ${r.wicket_type} ${
-                  r.player_dismissed ? `(${r.player_dismissed})` : ''
+            const ex =
+              +r.wides + +r.noballs + +r.byes + +r.legbyes + +r.penalty || 0
+            const ev = []
+            if (+r.runs_off_bat > 0) ev.push(`Runs: ${r.runs_off_bat}`)
+            if (ex > 0) ev.push(`Extras: ${ex}`)
+            if ((r.wicket_type || '').trim())
+              ev.push(
+                `Wicket: ${r.wicket_type}${
+                  r.player_dismissed ? ` (${r.player_dismissed})` : ''
                 }`
               )
-
-            const rowClass = s >= 0.5 ? 'class="good"' : ''
-            return `<tr ${rowClass}>
-      <td>
-        <div><strong>${r.match_id || '—'}</strong></div>
-        <div class="hint">${r.start_date || '—'} • Over ${r.ball || '—'}</div>
-      </td>
-      <td>
-        <div><strong>${r.batting_team || '—'}</strong> vs <strong>${
+            const trClass = s >= 0.5 ? 'class="good"' : ''
+            return `<tr ${trClass}>
+      <td><b>${r.match_id || '—'}</b><div class="hint">${
+              r.start_date || '—'
+            } • Over ${r.ball || '—'}</div></td>
+      <td><b>${r.batting_team || '—'}</b> vs <b>${
               r.bowling_team || '—'
-            }</strong></div>
-        <div class="pill">${r.venue || '—'}</div>
-      </td>
-      <td>
-        <div>Striker: <strong>${r.striker || '—'}</strong></div>
-        <div>Non‑striker: ${r.non_striker || '—'}</div>
-        <div>Bowler: ${r.bowler || '—'}</div>
-      </td>
-      <td>${event.join(' • ') || '—'}<div class="hint">${
-              docs[i].label
-            }</div></td>
+            }</b></td>
+      <td>${r.venue || '—'}</td>
+      <td>Striker: <b>${r.striker || '—'}</b><br/>Non‑striker: ${
+              r.non_striker || '—'
+            }<br/>Bowler: ${r.bowler || '—'}</td>
+      <td>${ev.join(' • ') || '—'}<div class="hint">${docs[i].label}</div></td>
       <td>${s.toFixed(3)}</td>
-      <td>${matchEmoji(s)}</td>
+      <td>${emoji(s)}</td>
     </tr>`
           })
           .join('')
       }
 
-      // Enter to search
+      // enter to search
       $('q').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') search()
       })
