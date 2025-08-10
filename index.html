@@ -129,13 +129,27 @@
               </option>
             </select>
           </div>
-          <div style="align-self: end">
+          <div
+            style="
+              align-self: end;
+              display: flex;
+              gap: 10px;
+              align-items: center;
+            "
+          >
+            <label
+              class="hint"
+              style="display: flex; gap: 6px; align-items: center"
+            >
+              <input id="filterByLabel" type="checkbox" />
+              Only show these in results
+            </label>
             <button id="btnSearch">Search</button>
           </div>
         </div>
         <div class="hint" style="margin-top: 6px">
-          We auto‑load <code>psl.csv</code> from this folder. No uploads or
-          settings needed.
+          We auto‑load <code>PSL_Season_09_dataset.csv</code> from this folder.
+          No uploads or settings needed.
         </div>
       </div>
 
@@ -162,7 +176,7 @@
             We turn each ball’s info into text and use <b>TF‑IDF</b> to make
             vectors. Your query becomes a vector too. We compare with
             <b>cosine similarity</b> and rank the best matches (Top‑K = 10).
-            Your “What are you looking for?” choice marks each row as:
+            Your “What are you looking for?” choice marks rows as:
             <ul>
               <li><b>Wickets</b>: any wicket_type present</li>
               <li><b>Runs off the bat</b>: runs_off_bat ≥ 1</li>
@@ -200,7 +214,7 @@
           <tbody id="tbody">
             <tr>
               <td colspan="7" class="hint">
-                Waiting for <code>psl.csv</code>…
+                Waiting for <code>PSL_Season_09_dataset.csv</code>…
               </td>
             </tr>
           </tbody>
@@ -214,12 +228,34 @@
     <script>
       /* ===== Helpers ===== */
       const $ = (id) => document.getElementById(id)
+
+      // small stopword set to reduce noise
+      const STOP = new Set([
+        'the',
+        'a',
+        'an',
+        'in',
+        'at',
+        'on',
+        'of',
+        'and',
+        'or',
+        'to',
+        'vs',
+        'v',
+        'with',
+        'for',
+        'from',
+        'by',
+        'over',
+      ])
+
       function tokenize(s) {
         return s
           .toLowerCase()
-          .replace(/[^a-z0-9\s]/g, ' ')
+          .replace(/[^a-z0-9\s-]/g, ' ')
           .split(/\s+/)
-          .filter(Boolean)
+          .filter((t) => t && !STOP.has(t))
       }
       function cosine(a, b) {
         let d = 0,
@@ -237,6 +273,20 @@
         if (score >= 0.5) return '🟢 High'
         if (score >= 0.2) return '🟡 Medium'
         return '🔴 Low'
+      }
+
+      // normalize cricket phrasing in the query to tokens we index
+      function normalizeQuery(q) {
+        let s = q.toLowerCase()
+        s = s
+          .replace(/\b6s\b/g, ' sixes ')
+          .replace(/\b6\b/g, ' six ')
+          .replace(/\b4s\b/g, ' fours ')
+          .replace(/\b4\b/g, ' four ')
+          .replace(/\brun out\b/g, ' runout ')
+          .replace(/\bno ?ball(s)?\b/g, ' noballs ')
+          .replace(/\bleg ?bye(s)?\b/g, ' legbyes ')
+        return s
       }
 
       /* ===== Data + Index ===== */
@@ -262,9 +312,42 @@
           return 'extras'
         return 'other'
       }
+
       function rowText(r) {
-        const ex =
-          +r.wides + +r.noballs + +r.byes + +r.legbyes + +r.penalty || 0
+        const n = (x) => +x || 0
+        const runs = n(r.runs_off_bat)
+        const wides = n(r.wides),
+          noballs = n(r.noballs),
+          byes = n(r.byes),
+          legbyes = n(r.legbyes),
+          penalty = n(r.penalty)
+        const extras = wides + noballs + byes + legbyes + penalty
+
+        const wicket = (r.wicket_type || '').toLowerCase().trim()
+        const wicketTokens = []
+        if (wicket) {
+          wicketTokens.push('wicket', 'out')
+          if (wicket.includes('caught')) wicketTokens.push('caught')
+          if (wicket.includes('bowled')) wicketTokens.push('bowled')
+          if (wicket.includes('lbw')) wicketTokens.push('lbw')
+          if (wicket.includes('run out')) wicketTokens.push('runout', 'run-out')
+          if (wicket.includes('stumped')) wicketTokens.push('stumped')
+          if (r.player_dismissed) wicketTokens.push(r.player_dismissed)
+        }
+
+        const runTokens = []
+        if (runs > 0) runTokens.push('run', 'runs', String(runs))
+        if (runs === 4) runTokens.push('four', 'fours', 'boundary', '4s')
+        if (runs === 6) runTokens.push('six', 'sixes', '6s')
+
+        const extraTokens = []
+        if (wides) extraTokens.push('wide', 'wides')
+        if (noballs) extraTokens.push('no-ball', 'noball', 'noballs')
+        if (byes) extraTokens.push('bye', 'byes')
+        if (legbyes) extraTokens.push('leg-bye', 'legbyes', 'leg-byes')
+        if (penalty) extraTokens.push('penalty', 'penalties')
+        if (extras) extraTokens.push('extras')
+
         return [
           r.start_date,
           r.venue,
@@ -279,17 +362,14 @@
           r.bowler,
           'over',
           r.ball,
-          'runs',
-          r.runs_off_bat,
-          'extras',
-          ex,
-          'wicket',
-          r.wicket_type,
-          r.player_dismissed,
+          ...runTokens,
+          ...extraTokens,
+          ...wicketTokens,
         ]
           .filter(Boolean)
           .join(' ')
       }
+
       function rebuildDocs() {
         docs = rows.map((r, i) => ({ i, label: labelRow(r), text: rowText(r) }))
         // build vocab/idf
@@ -362,13 +442,13 @@
       }
       ;(async function () {
         try {
-          const res = await fetch('psl.csv')
+          const res = await fetch('PSL_Season_09_dataset.csv')
           if (!res.ok) throw new Error(res.statusText)
           parseCSV(await res.text())
         } catch (e) {
           $(
             'tbody'
-          ).innerHTML = `<tr><td colspan="7" class="hint">Place <code>psl.csv</code> beside this file.</td></tr>`
+          ).innerHTML = `<tr><td colspan="7" class="hint">Place <code>PSL_Season_09_dataset.csv</code> beside this file.</td></tr>`
         }
       })()
 
@@ -419,13 +499,13 @@
           alert('CSV not loaded yet.')
           return
         }
-        const query = $('q').value.trim()
-        if (!query) {
+        const queryRaw = $('q').value.trim()
+        if (!queryRaw) {
           alert('Enter a query')
           return
         }
 
-        // query vector
+        const query = normalizeQuery(queryRaw)
         const qVec = new Float32Array(dim)
         tokenize(query).forEach((t) => {
           const j = vocab.get(t)
@@ -436,11 +516,18 @@
         const ranked = docs
           .map((d, i) => ({ i, s: cosine(qVec, d.vec) }))
           .sort((a, b) => b.s - a.s)
-        const topK = 10
-        const top = ranked.slice(0, topK)
 
-        // metrics (skip if "Anything")
         const want = $('label').value
+        const topK = 10
+
+        // Optionally filter visible results by label before Top‑K
+        let rankedForView = ranked
+        if (want !== 'any' && $('filterByLabel').checked) {
+          rankedForView = ranked.filter((t) => docs[t.i].label === want)
+        }
+        const top = rankedForView.slice(0, topK)
+
+        // Metrics (skip if “Anything”)
         if (want === 'any') {
           $('prec').textContent = '–'
           $('rec').textContent = '–'
@@ -453,25 +540,34 @@
           const tp = top.filter((t) => docs[t.i].label === want).length
           const fp = top.length - tp
           const fn = relevantAll.length - tp
-          const precision = tp / (tp + fp || 1)
-          const recall = tp / (tp + fn || 1)
-          $('prec').textContent = precision.toFixed(2)
-          $('rec').textContent = recall.toFixed(2)
+          $('prec').textContent = (tp / (tp + fp || 1)).toFixed(2)
+          $('rec').textContent = (tp / (tp + fn || 1)).toFixed(2)
           $('topk').textContent = `${top.length}`
           $('relevant').textContent = `${relevantAll.length}`
         }
 
-        // stats from top set
+        // Stats reflect what user sees
         statsFrom(top.map((t) => t.i))
 
-        // render
+        // Render
+        if (top.length === 0) {
+          $(
+            'tbody'
+          ).innerHTML = `<tr><td colspan="7" class="hint">No matches. Try different words or uncheck “Only show these in results”.</td></tr>`
+          return
+        }
         $('tbody').innerHTML = top
           .map(({ i, s }) => {
             const r = rows[docs[i].i]
+            const n = (x) => +x || 0
             const ex =
-              +r.wides + +r.noballs + +r.byes + +r.legbyes + +r.penalty || 0
+              n(r.wides) +
+              n(r.noballs) +
+              n(r.byes) +
+              n(r.legbyes) +
+              n(r.penalty)
             const ev = []
-            if (+r.runs_off_bat > 0) ev.push(`Runs: ${r.runs_off_bat}`)
+            if (n(r.runs_off_bat) > 0) ev.push(`Runs: ${r.runs_off_bat}`)
             if (ex > 0) ev.push(`Extras: ${ex}`)
             if ((r.wicket_type || '').trim())
               ev.push(
@@ -499,7 +595,7 @@
           .join('')
       }
 
-      // enter to search
+      // Enter to search
       $('q').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') search()
       })
