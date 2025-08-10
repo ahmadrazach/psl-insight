@@ -103,7 +103,7 @@
     <main class="wrap">
       <h1>PSL Insight</h1>
       <div class="hint">
-        Search PSL Season 9 (Feb–Mar 2024) ball‑by‑ball data. Type anything and
+        Search PSL Season 9 (Feb–Mar 2024) ball-by-ball data. Type anything and
         choose what you want to find.
       </div>
 
@@ -148,8 +148,8 @@
           </div>
         </div>
         <div class="hint" style="margin-top: 6px">
-          We auto‑load <code>PSL_Season_09_dataset.csv</code> from this folder.
-          No uploads or settings needed.
+          We auto-load <code>psl.csv</code> from this folder. No uploads or
+          settings needed.
         </div>
       </div>
 
@@ -164,33 +164,25 @@
         <div>
           <span class="metric">Precision: <strong id="prec">–</strong></span>
           <span class="metric">Recall: <strong id="rec">–</strong></span>
-          <span class="metric">Top‑K shown: <strong id="topk">–</strong></span>
+          <span class="metric">Top-K shown: <strong id="topk">–</strong></span>
           <span class="metric"
             >All rows matching your choice:
             <strong id="relevant">–</strong></span
           >
         </div>
-        <details style="margin-top: 8px">
-          <summary>How the score works</summary>
-          <div class="hint">
-            We turn each ball’s info into text and use <b>TF‑IDF</b> to make
-            vectors. Your query becomes a vector too. We compare with
-            <b>cosine similarity</b> and rank the best matches (Top‑K = 10).
-            Your “What are you looking for?” choice marks rows as:
-            <ul>
-              <li><b>Wickets</b>: any wicket_type present</li>
-              <li><b>Runs off the bat</b>: runs_off_bat ≥ 1</li>
-              <li><b>Extras</b>: wides/noballs/byes/legbyes/penalty ≥ 1</li>
-              <li><b>Anything</b>: no label filter (metrics disabled)</li>
-            </ul>
-            Precision = TP / (TP + FP). &nbsp; Recall = TP / (TP + FN).
-          </div>
-        </details>
       </div>
 
       <!-- Quick stats -->
       <div class="card" style="margin-top: 12px">
-        <h3 style="margin: 6px 0 8px">In these results (Top 10)</h3>
+        <h3 style="margin: 6px 0 8px">In these results (Top 10)</h3>
+        <details>
+          <summary>What's this?</summary>
+          <div class="hint" style="margin-top: 6px">
+            Shows a quick breakdown of the Top-K results — total runs, wickets,
+            boundaries, and which batters/bowlers feature most. These stats only
+            apply to the currently visible Top-K list, not the whole dataset.
+          </div>
+        </details>
         <div id="stats" class="hint">
           Type a query to see totals for runs, wickets, 4s/6s, and top players.
         </div>
@@ -199,6 +191,25 @@
       <!-- Results -->
       <div class="card" style="margin-top: 12px">
         <h3 style="margin: 6px 0 8px">Results</h3>
+        <details>
+          <summary>What's this?</summary>
+          <div class="hint" style="margin-top: 6px">
+            This table shows the Top-K most similar rows to your query, ranked
+            by cosine similarity.
+            <ul>
+              <li><b>Match / Over</b>: match ID, date, and over number.</li>
+              <li><b>Teams</b>: batting vs bowling teams.</li>
+              <li><b>Venue</b>: where the match was played.</li>
+              <li><b>Players</b>: striker, non-striker, bowler.</li>
+              <li><b>Event</b>: runs, extras, or wicket details.</li>
+              <li><b>Score</b>: similarity score (0–1).</li>
+              <li>
+                <b>Match</b>: qualitative score category (🟢✨ perfect, 🟡
+                medium, etc.).
+              </li>
+            </ul>
+          </div>
+        </details>
         <table>
           <thead>
             <tr>
@@ -214,7 +225,7 @@
           <tbody id="tbody">
             <tr>
               <td colspan="7" class="hint">
-                Waiting for <code>PSL_Season_09_dataset.csv</code>…
+                Waiting for <code>psl.csv</code>…
               </td>
             </tr>
           </tbody>
@@ -223,13 +234,42 @@
           Match quality legend: 🟢✨ ≥0.80, 🟢 ≥0.50, 🟡 ≥0.20, 🔴 &lt;0.20
         </div>
       </div>
+
+      <!-- Why other venues? (moved to bottom) -->
+      <div class="card" style="margin-top: 12px">
+        <details open>
+          <summary>
+            <strong
+              >Why do I sometimes see other venues or teams in the
+              results?</strong
+            >
+          </summary>
+          <div class="hint" style="margin-top: 6px">
+            This app ranks rows by <b>similarity</b> (TF-IDF + cosine). It does
+            not hard-filter by venue/team from your sentence. So “wickets at
+            Gaddafi Stadium” will prefer Gaddafi rows but may still include
+            other venues if their overall text is similar. <br /><br />
+            You can still control the list:
+            <ul>
+              <li>
+                Use the “<b>What are you looking for?</b>” dropdown and tick “<b
+                  >Only show these in results</b
+                >” to restrict by type.
+              </li>
+              <li>
+                Add more specific words (player, over, opponent, etc.) for
+                tighter matches.
+              </li>
+            </ul>
+            (A strict venue filter is a possible future enhancement.)
+          </div>
+        </details>
+      </div>
     </main>
 
     <script>
       /* ===== Helpers ===== */
       const $ = (id) => document.getElementById(id)
-
-      // small stopword set to reduce noise
       const STOP = new Set([
         'the',
         'a',
@@ -275,7 +315,6 @@
         return '🔴 Low'
       }
 
-      // normalize cricket phrasing in the query to tokens we index
       function normalizeQuery(q) {
         let s = q.toLowerCase()
         s = s
@@ -312,7 +351,6 @@
           return 'extras'
         return 'other'
       }
-
       function rowText(r) {
         const n = (x) => +x || 0
         const runs = n(r.runs_off_bat)
@@ -372,7 +410,6 @@
 
       function rebuildDocs() {
         docs = rows.map((r, i) => ({ i, label: labelRow(r), text: rowText(r) }))
-        // build vocab/idf
         const df = {}
         docs.forEach((d) => {
           const seen = new Set()
@@ -392,7 +429,6 @@
           vocab.set(t, idx++)
         }
         dim = vocab.size
-        // doc vectors
         docs.forEach((d) => {
           const vec = new Float32Array(dim),
             tf = {}
@@ -512,7 +548,6 @@
           if (j !== undefined) qVec[j] = idf[t] || 0
         })
 
-        // score all docs
         const ranked = docs
           .map((d, i) => ({ i, s: cosine(qVec, d.vec) }))
           .sort((a, b) => b.s - a.s)
@@ -520,14 +555,12 @@
         const want = $('label').value
         const topK = 10
 
-        // Optionally filter visible results by label before Top‑K
         let rankedForView = ranked
         if (want !== 'any' && $('filterByLabel').checked) {
           rankedForView = ranked.filter((t) => docs[t.i].label === want)
         }
         const top = rankedForView.slice(0, topK)
 
-        // Metrics (skip if “Anything”)
         if (want === 'any') {
           $('prec').textContent = '–'
           $('rec').textContent = '–'
@@ -546,10 +579,8 @@
           $('relevant').textContent = `${relevantAll.length}`
         }
 
-        // Stats reflect what user sees
         statsFrom(top.map((t) => t.i))
 
-        // Render
         if (top.length === 0) {
           $(
             'tbody'

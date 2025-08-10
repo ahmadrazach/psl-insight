@@ -1,69 +1,45 @@
-Browser‑based search and retrieval‑metrics explorer for PSL Season 9 (ball‑by‑ball). No backend. Deploy anywhere.
+# PSL Insight
 
-## What it does
+**PSL Insight** is a lightweight, interactive search tool for **PSL Season 9 (Feb–Mar 2024)** ball-by-ball data. Search with natural language (e.g., _"Shaheen Afridi wickets at Gaddafi Stadium"_) and instantly explore results.
 
-• Free‑text search over ball‑by‑ball events.
-• Team/venue/season filters.
-• Top‑K ranking via TF‑IDF + cosine similarity.
-• Retrieval metrics: Precision & Recall per label (batting, wicket, extras, other).
-• Quick stats for the current result set (runs, wickets, 4s/6s, top batters/bowlers).
+---
 
-## Dataset
+## 🚀 Features
 
-• Source: PSL Season 9 (Feb–Mar 2024), ball‑by‑ball (Cricsheet derived).
-• Fields used: match*id, season, start_date, venue, innings, ball, batting_team, bowling_team, striker, non_striker, bowler, runs_off_bat, wides, noballs, byes, legbyes, penalty, wicket_type, player_dismissed, other*\*.
+- Natural language search with **category filters** (Wickets, Runs, Extras).
+- **Precision & Recall** metrics in plain English.
+- Quick stats for top results (runs, wickets, boundaries, top players).
+- Detailed match/event table with similarity scores.
+- Built-in dataset (`psl.csv`) — no extra setup.
+- Toggle explanations for every section.
 
-## How it works
+---
 
-• Build TF‑IDF vectors in the browser from a rich text view of each row.
-• Embed query with the same vocabulary.
-• Rank with cosine similarity (Top‑K).
-• Auto‑label rows:
-• wicket: any wicket_type present
-• batting: runs_off_bat ≥ 1
-• extras: sum of wides/noballs/byes/legbyes/penalty ≥ 1
-• other: otherwise
-• Compute Precision = TP/(TP+FP) and Recall = TP/(TP+FN) on the filtered set.
+## 🛠 Tech
 
-## Quick start 1. Place these files together:
+- **Frontend:** HTML, CSS, JS
+- **Search:** TF-IDF + cosine similarity
+- **Data:** PSL Season 9 CSV (Feb–Mar 2024)
 
-index.html
-psl.csv # your Season 9 ball-by-ball CSV
+---
 
-    2.	Open index.html in a browser
+## 📦 Usage
 
-– or push to GitHub and deploy on Vercel/Netlify as a static site.
+1. Put `psl.csv` in the project folder.
+2. Open `index.html` in your browser.
+3. Type queries and explore PSL data.
 
-(No API keys. No servers. Everything runs client‑side.)
+---
 
-Usage
-• Type a query (e.g., Shaheen Afridi wicket Gaddafi).
-• Set filters (season/team/venue) as needed.
-• Choose a “Retrieval label” for metrics (batting/wicket/extras/other).
-• Click Search (or press Enter).
-• Review:
-• Ranked rows with emoji match quality (🟢✨ ≥0.80, 🟢 ≥0.50, 🟡 ≥0.20, 🔴 <0.20)
-• Precision/Recall for the chosen label
-• Quick stats for the current Top‑K
+## 💡 Example Queries
 
-Example queries
-• Babar Azam boundaries
-• Islamabad United wides
-• Multan Sultans wickets National Stadium
-• Fakhar Zaman sixes Lahore
-• Usama Mir bowling economy
+- `Babar Azam running sixes`
+- `Shaheen Afridi yorkers`
+- `Fakhar Zaman runs at National Stadium`
 
-Tech
-• HTML + Vanilla JS
-• PapaParse for CSV
-• In‑browser TF‑IDF + cosine
+---
 
-Roadmap
-• CSV upload for any PSL season.
-• Per‑match and per‑player dashboards.
-• N‑gram tokens and stop‑word cleanup.
-• Optional sentence embeddings (precomputed) for semantic search.
+## ❓ Why You Might See Other Venues or Teams
 
-License
-
-MIT for code. Data © respective owners (Cricsheet‑derived).
+Search is similarity-based, so results _prefer_ matches but may include others if textually close.  
+Use **"Only show these in results"** or add more specific query terms to filter.
