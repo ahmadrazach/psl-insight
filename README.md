@@ -19,7 +19,7 @@
 
 - **Frontend:** HTML, CSS, JS
 - **Search:** TF-IDF + cosine similarity
-- **Data:** PSL Season 9 CSV (Feb–Mar 2024)
+- **Data:** PSL Season 9 CSV (Feb–Mar 2024). *Note: Contains batting/bowling info but not fielder names (catches).*
 
 ---
 

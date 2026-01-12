@@ -122,7 +122,7 @@
             <label>What are you looking for?</label><br />
             <select id="label">
               <option value="any">Anything</option>
-              <option value="wicket">Wickets</option>
+              <option value="wicket">Dismissals (who got out)</option>
               <option value="batting">Runs off the bat</option>
               <option value="extras">
                 Extras (wides/noballs/byes/legbyes/penalty)
@@ -149,7 +149,9 @@
         </div>
         <div class="hint" style="margin-top: 6px">
           We auto-load <code>psl.csv</code> from this folder. No uploads or
-          settings needed.
+          settings needed. <br />
+          Note: “caught (X)” means X was dismissed caught. This dataset doesn’t
+          include catcher/fielder names.
         </div>
       </div>
 
@@ -325,6 +327,9 @@
           .replace(/\brun out\b/g, ' runout ')
           .replace(/\bno ?ball(s)?\b/g, ' noballs ')
           .replace(/\bleg ?bye(s)?\b/g, ' legbyes ')
+           // New normalizations
+          .replace(/\bcatch(es|ing)?\b/g, ' caught ')
+          .replace(/\bmuhammad\b/g, ' mohammad ')
         return s
       }
 
@@ -365,7 +370,7 @@
         const wicketTokens = []
         if (wicket) {
           wicketTokens.push('wicket', 'out')
-          if (wicket.includes('caught')) wicketTokens.push('caught')
+          if (wicket.includes('caught')) wicketTokens.push('caught', 'catch') // Enrich with 'catch'
           if (wicket.includes('bowled')) wicketTokens.push('bowled')
           if (wicket.includes('lbw')) wicketTokens.push('lbw')
           if (wicket.includes('run out')) wicketTokens.push('runout', 'run-out')
@@ -540,6 +545,16 @@
           alert('Enter a query')
           return
         }
+        
+        // Query intent guard
+        const catchTerms = ['catch', 'caught', 'fielder', 'fielding']
+        const hasCatch = catchTerms.some(t => queryRaw.toLowerCase().includes(t))
+        let warningRow = ''
+        if (hasCatch) {
+           warningRow = `<tr style="background:#fff3cd"><td colspan="7" style="color:#856404; padding:10px;">
+             ⚠️ This dataset can show who was dismissed caught, but not who took the catch (fielder name not available).
+           </td></tr>`
+        }
 
         const query = normalizeQuery(queryRaw)
         const qVec = new Float32Array(dim)
@@ -587,7 +602,7 @@
           ).innerHTML = `<tr><td colspan="7" class="hint">No matches. Try different words or uncheck “Only show these in results”.</td></tr>`
           return
         }
-        $('tbody').innerHTML = top
+        $('tbody').innerHTML = warningRow + top
           .map(({ i, s }) => {
             const r = rows[docs[i].i]
             const n = (x) => +x || 0
@@ -602,8 +617,10 @@
             if (ex > 0) ev.push(`Extras: ${ex}`)
             if ((r.wicket_type || '').trim())
               ev.push(
-                `Wicket: ${r.wicket_type}${
-                  r.player_dismissed ? ` (${r.player_dismissed})` : ''
+                `Dismissal: ${r.wicket_type}${
+                  r.player_dismissed
+                    ? ` — batter out: ${r.player_dismissed}`
+                    : ''
                 }`
               )
             const trClass = s >= 0.5 ? 'class="good"' : ''
